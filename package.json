@@ -1,0 +1,29 @@
+{
+  "name": "rtsp-management-system",
+  "version": "1.0.0",
+  "description": "A comprehensive RTSP stream management system with Node.js frontend and Python FastAPI backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build",
+    "test": "concurrently \"cd server && npm test\" \"cd client && npm test\""
+  },
+  "keywords": [
+    "rtsp",
+    "stream",
+    "management",
+    "nodejs",
+    "fastapi"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  }
+}

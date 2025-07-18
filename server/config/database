@@ -1,0 +1,34 @@
+// server/config/database.js
+const mongoose = require('mongoose');
+const { logger } = require('../utils/logger');
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Load environment variables from the root .env file
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+// Set strictQuery to suppress the deprecation warning
+mongoose.set('strictQuery', false);
+
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGO_URI ;//|| 'mongodb://localhost:27017/rtsp_management';
+    
+    if (!mongoURI) {
+      throw new Error('MongoDB connection string is not defined in environment variables');
+    }
+
+    const conn = await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+
+    logger.info(`MongoDB Connected: ${conn.connection.host}`);
+    return conn;
+  } catch (error) {
+    logger.error(`MongoDB connection error: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+module.exports = { connectDB };
