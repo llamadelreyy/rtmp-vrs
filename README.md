@@ -39,13 +39,60 @@ A comprehensive Node.js frontend project that connects to a Python FastAPI backe
 
 ## Setup Instructions
 
-### Prerequisites
+### Option 1: Docker Setup (Recommended)
+
+#### Prerequisites
+- Docker and Docker Compose installed on your system
+
+#### Quick Start with Docker
+1. Clone the repository:
+```bash
+git clone https://github.com/cyysky/CameraGenAI.git
+cd rtsp-management-system
+```
+
+2. Start the required services (MongoDB and Redis):
+```bash
+sudo docker compose up -d
+```
+
+This will start:
+- **MongoDB** on port 27018 (mapped from container port 27017)
+- **Redis** on port 6379 with persistence enabled
+
+3. Verify services are running:
+```bash
+sudo docker compose ps
+```
+
+4. Update your server `.env` file to use the Docker services:
+```
+MONGO_URI=mongodb://localhost:27018/rtsp_management
+REDIS_URL=redis://localhost:6379
+```
+
+5. Continue with the application setup (install dependencies and start the servers as described in Option 2).
+
+To stop the Docker services:
+```bash
+sudo docker compose down
+```
+
+To stop and remove volumes (this will delete all data):
+```bash
+sudo docker compose down -v
+```
+
+### Option 2: Manual Installation
+
+#### Prerequisites
 - Node.js (v14 or higher)
 - npm (v6 or higher)
 - MongoDB (v4 or higher)
+- Redis server
 - Python 3.8+ for the FastAPI backend
 
-### Installation
+#### Installation
 
 
 1. Clone the repository:
