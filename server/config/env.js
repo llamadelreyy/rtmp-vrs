@@ -12,5 +12,10 @@ module.exports = {
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   RATE_LIMIT_WINDOW_MS: eval(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 100
+  RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+  
+  // VLM Configuration
+  VLM_API_URL: process.env.VLM_API_URL || 'http://localhost:8881/v1/chat/completions',
+  VLM_MODEL: process.env.VLM_MODEL || 'Qwen2.5-VL-3B-Instruct',
+  VLM_MAX_TOKENS: parseInt(process.env.VLM_MAX_TOKENS) || 1000
 };

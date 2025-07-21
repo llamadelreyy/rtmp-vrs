@@ -16,7 +16,12 @@ pip install 'vllm>0.7.2'
 
 for 2x card with 10GB vram (total 20GB)
 
-vllm serve Qwen2.5-VL-3B-Instruct --tensor-parallel-size 2 --port 8000 --host 0.0.0.0 --dtype bfloat16 --limit-mm-per-prompt image=1,video=0 --max-model-len=32768
+pip install git+https://github.com/huggingface/transformers accelerate
+
+python Qwen2_5-VL-3B.py #Tested working, change the port if needed
+
+
+vllm serve Qwen2.5-VL-3B-Instruct --tensor-parallel-size 2 --port 8000 --host 0.0.0.0 --dtype bfloat16 --limit-mm-per-prompt image=1,video=0 --max-model-len=32768 --gpu-memory-utilization 0.4
 
 
 

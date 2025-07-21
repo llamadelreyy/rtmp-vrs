@@ -8,7 +8,9 @@ const config = require('../config/env');
 class VisionProcessor {
   constructor(openAIKey) {
     this.openAIKey = openAIKey || config.OPENAI_API_KEY;
-    this.endpoint = 'http://localhost:8000/v1/chat/completions'; // Use customer's local inference server
+    this.endpoint = config.VLM_API_URL; // Use VLM API URL from environment variables
+    this.model = config.VLM_MODEL; // Use VLM model from environment variables
+    this.maxTokens = config.VLM_MAX_TOKENS; // Use max tokens from environment variables
     this.headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.openAIKey}`
@@ -21,7 +23,7 @@ class VisionProcessor {
       const response = await axios.post(
         this.endpoint,
         {
-          model: "Qwen2.5-VL-3B-Instruct",
+          model: this.model,
           messages: [
             {
               role: "user",
@@ -37,7 +39,7 @@ class VisionProcessor {
               ]
             }
           ],
-          max_tokens: 1000
+          max_tokens: this.maxTokens
         },
         { headers: this.headers }
       );
