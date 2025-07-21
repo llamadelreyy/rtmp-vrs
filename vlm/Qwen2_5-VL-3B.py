@@ -382,5 +382,5 @@ async def health_check():
     return {"status": "ok"}
 
 if __name__ == "__main__":
-    logger.info("Starting Qwen2.5-VL API server on port 8000")
-    uvicorn.run("Qwen2_5-VL-3B:app", host="0.0.0.0", port=8000, log_level="info")
+    logger.info("Starting Qwen2.5-VL API server on port 8881")
+    uvicorn.run("Qwen2_5-VL-3B:app", host="0.0.0.0", port=8881, log_level="info")

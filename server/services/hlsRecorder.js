@@ -5,6 +5,8 @@ const fs = require('fs').promises;
 const { existsSync, mkdirSync } = require('fs');
 const { logger } = require('../utils/logger');
 const Stream = require('../models/Stream');
+const HLSCleanupService = require('./hlsCleanup');
+const cleanupConfig = require('../config/cleanup');
 
 class HlsRecorder {
   constructor() {
@@ -14,6 +16,20 @@ class HlsRecorder {
     // Create base directory if it doesn't exist
     if (!existsSync(this.baseDir)) {
       mkdirSync(this.baseDir, { recursive: true });
+    }
+
+    // Initialize cleanup service
+    this.cleanupService = new HLSCleanupService({
+      capturesPath: cleanupConfig.hls.capturesPath,
+      maxSizeGB: cleanupConfig.hls.maxSizeGB,
+      cleanupIntervalMs: cleanupConfig.hls.cleanupIntervalMs,
+      retentionDays: cleanupConfig.hls.retentionDays
+    });
+
+    // Start cleanup service if auto cleanup is enabled
+    if (cleanupConfig.hls.autoCleanupEnabled) {
+      this.cleanupService.start();
+      logger.info('HLS cleanup service started automatically');
     }
 
     // Set up periodic health check
@@ -616,9 +632,43 @@ class HlsRecorder {
   }
 
   /**
+   * Get cleanup service instance
+   */
+  getCleanupService() {
+    return this.cleanupService;
+  }
+
+  /**
+   * Get cleanup statistics
+   */
+  async getCleanupStats() {
+    return await this.cleanupService.getCleanupStats();
+  }
+
+  /**
+   * Manually trigger cleanup
+   */
+  async triggerCleanup() {
+    return await this.cleanupService.performCleanup();
+  }
+
+  /**
+   * Force cleanup to target size
+   */
+  async forceCleanup(targetSizeGB) {
+    return await this.cleanupService.forceCleanup(targetSizeGB);
+  }
+
+  /**
    * Clean up resources when service stops
    */
   async shutdown() {
+    // Stop cleanup service
+    if (this.cleanupService) {
+      this.cleanupService.stop();
+      logger.info('HLS cleanup service stopped');
+    }
+
     // Clear health check interval
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval);
