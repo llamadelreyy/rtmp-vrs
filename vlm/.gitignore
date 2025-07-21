@@ -1,0 +1,7 @@
+/.cache
+.env
+venv/**
+/SmolVLM2-256M-Video-Instruct
+/Qwen2.5-VL-3B-Instruct
+__pycache__/
+MiniCPM-V-2_6-int4/
