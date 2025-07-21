@@ -179,6 +179,27 @@ ollama pull nomic-embed-text:v1.5
 ```
 5. Start the development servers:
 
+the port to this is 3000
+admin
+secureAdminPassword
+
+the backend port is 5000 vlm port is 8881
+
+startup guide
+cd ~/VRS/RTMP_MONITORING/
+# Start server
+cd server
+npm run dev
+
+# Start frontend
+cd frontend
+npm start
+
+# Start VLM
+source ~/vpy/bin/activate
+cd vlm
+python Qwen2_5-VL-3B.py
+
 # Start both client and server in development mode
 npm start
 
