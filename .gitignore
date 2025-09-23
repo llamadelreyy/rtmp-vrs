@@ -1,1 +1,93 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+*.log.*
+/server/logs/
+combined.log
+error.log
+
+# Build outputs
+build/
+dist/
+.next/
+out/
+
+# Cache and temporary files
+.cache/
+.tmp/
+tmp/
+temp/
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Captures and media files
 /server/public/captures/
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+
+# VLM Models and large files
+vlm/Qwen2.5-VL-3B-Instruct/
+vlm/*.bin
+vlm/*.safetensors
+vlm/*.gguf
+vlm/*.pth
+vlm/*.pt
+vlm/*.ckpt
+vlm/models/
+vlm/downloads/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Docker
+.dockerignore
+
+# Misc
+.sass-cache/
+connect.lock
+typings/

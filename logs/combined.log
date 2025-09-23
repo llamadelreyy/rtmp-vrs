@@ -1,2 +1,15 @@
 {"level":"info","message":"MongoDB Connected: localhost","service":"rtsp-management-server","timestamp":"2025-07-18 15:51:08"}
 {"level":"info","message":"Admin user created: admin","service":"rtsp-management-server","timestamp":"2025-07-18 15:51:08"}
+{"level":"info","message":"MongoDB Connected: localhost","service":"rtsp-management-server","timestamp":"2025-08-05 14:50:01"}
+{"level":"info","message":"Admin user already exists","service":"rtsp-management-server","timestamp":"2025-08-05 14:50:01"}
+{"level":"info","message":"MongoDB Connected: localhost","service":"rtsp-management-server","timestamp":"2025-08-05 14:50:49"}
+{"level":"info","message":"Admin user found. Resetting password...","service":"rtsp-management-server","timestamp":"2025-08-05 14:50:49"}
+{"level":"info","message":"Admin password reset successfully","service":"rtsp-management-server","timestamp":"2025-08-05 14:50:49"}
+{"level":"info","message":"Current users in database:","service":"rtsp-management-server","timestamp":"2025-08-05 14:50:49"}
+{"level":"info","message":"MongoDB Connected: localhost","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:47"}
+{"level":"info","message":"User created successfully:","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:48"}
+{"level":"info","message":"- Username: testuser","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:48"}
+{"level":"info","message":"- Email: test@example.com","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:48"}
+{"level":"info","message":"- Role: admin","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:48"}
+{"level":"info","message":"- ID: 6891aa3fd5c59c70f500f83a","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:48"}
+{"level":"info","message":"\nAll users in database:","service":"rtsp-management-server","timestamp":"2025-08-05 14:52:48"}

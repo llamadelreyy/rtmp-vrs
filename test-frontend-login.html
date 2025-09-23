@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login</title>
+</head>
+<body>
+    <h1>Test Login</h1>
+    <form id="loginForm">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="testuser" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="password123" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                console.log('Attempting login with:', { username, password });
+                
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<h3 style="color: green;">Login Successful!</h3>
+                        <p>User: ${data.user.username}</p>
+                        <p>Role: ${data.user.role}</p>
+                        <p>Token: ${data.token.substring(0, 50)}...</p>`;
+                } else {
+                    resultDiv.innerHTML = `<h3 style="color: red;">Login Failed!</h3>
+                        <p>Error: ${data.message || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                resultDiv.innerHTML = `<h3 style="color: red;">Network Error!</h3>
+                    <p>Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
