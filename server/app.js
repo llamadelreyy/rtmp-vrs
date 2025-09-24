@@ -20,6 +20,8 @@ const streamRoutes = require('./routes/streams');
 const visionRoutes = require('./routes/vision');
 const promptRoutes = require('./routes/prompts');
 const cleanupRoutes = require('./routes/cleanup');
+// const reportsRoutes = require('./routes/reports');
+// const testModelsRoutes = require('./routes/test-models');
 
 // Initialize Express app
 const app = express();
@@ -47,6 +49,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/streams', streamRoutes);
 app.use('/api/prompts', promptRoutes);
 app.use('/api/cleanup', cleanupRoutes);
+// app.use('/api/reports', reportsRoutes);
+// app.use('/api/test-models', testModelsRoutes);
 
 console.log('Registering Vision API routes...', Object.keys(visionRoutes));
 

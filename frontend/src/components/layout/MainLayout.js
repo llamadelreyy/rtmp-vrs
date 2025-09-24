@@ -1,454 +1,591 @@
-// client/src/components/layout/MainLayout.js - Fixed ListItem button prop issue
+// frontend/src/components/layout/MainLayout.js
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-//import { styled, useTheme } from '@mui/material/styles';
-import { styled } from '@mui/material/styles';
+import React, { useState } from 'react';
+import { styled, useTheme } from '@mui/material/styles';
 import {
-  AppBar as MuiAppBar,
-  Toolbar,
-  Typography,
-  Drawer as MuiDrawer,
-  Divider,
-  IconButton,
+  AppBar,
+  Box,
   CssBaseline,
+  Drawer,
+  IconButton,
   List,
   ListItem,
-  ListItemButton, // Import ListItemButton component
+  ListItemButton,
   ListItemIcon,
   ListItemText,
-  Box,
-  Tooltip,
-  Collapse
+  Toolbar,
+  Typography,
+  Avatar,
+  Menu,
+  MenuItem,
+  useMediaQuery,
+  Chip,
+  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
   Dashboard as DashboardIcon,
   Videocam as VideocamIcon,
-  People as PeopleIcon,
-  Person as PersonIcon,
-  ExitToApp as LogoutIcon,
   Search as SearchIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-  List as ListIcon,
-  Add as AddIcon
+  AccountCircle as AccountCircleIcon,
+  VideoLibrary as VideoLibraryIcon,
+  Logout as LogoutIcon,
+  SupervisorAccount as SupervisorAccountIcon,
+  Visibility as VisibilityIcon,
+  Assessment as AssessmentIcon,
+  NotificationsActive as NotificationsActiveIcon,
+  Psychology as PsychologyIcon,
+  Description as DescriptionIcon,
+  Shield as ShieldIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 
-const drawerWidth = 240;
+const drawerWidth = 320;
 
-// Styled components
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(['width', 'margin'], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(['width', 'margin'], {
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    flexGrow: 1,
+    padding: 0,
+    transition: theme.transitions.create('margin', {
       easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
+      duration: theme.transitions.duration.leavingScreen,
     }),
+    marginLeft: `-${drawerWidth}px`,
+    minHeight: '100vh',
+    backgroundColor: '#fafafa',
+    ...(open && {
+      transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0,
+    }),
+    [theme.breakpoints.up('md')]: {
+      marginLeft: 0,
+    },
   }),
-}));
-
-const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
-  width: open ? drawerWidth : theme.spacing(7),
-  flexShrink: 0,
-  whiteSpace: 'nowrap',
-  boxSizing: 'border-box',
-  '& .MuiDrawer-paper': {
-    position: 'fixed',
-    backgroundColor: theme.palette.background.paper,
-    color: theme.palette.text.primary,
-    overflowX: 'hidden',
-    width: open ? drawerWidth : theme.spacing(7),
-    [theme.breakpoints.up('sm')]: {
-      width: open ? drawerWidth : theme.spacing(9),
-    },
-    transition: theme.transitions.create('width', {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.standard,
-    }),
-    '&:hover': {
-      ...((!open) && {
-        width: drawerWidth,  // Match the full drawer width (240px)
-        [theme.breakpoints.up('sm')]: {
-          width: drawerWidth,
-        },
-        '& .MuiListItemText-root': {
-          opacity: 1,
-          transition: theme.transitions.create('opacity', {
-            duration: theme.transitions.duration.shorter,
-            delay: 50,  // Reduce delay for smoother appearance
-          }),
-        },
-        '& .MuiListItemIcon-root': {
-          minWidth: 48,
-          marginRight: theme.spacing(1),
-        },
-      }),
-    },
-    '& .MuiListItemText-root': {
-      opacity: open ? 1 : 0,
-      transition: theme.transitions.create('opacity', {
-        duration: theme.transitions.duration.shortest,
-      }),
-    },
-    zIndex: theme.zIndex.drawer,
-  },
-}));
+);
 
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-end',
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
+  padding: theme.spacing(2, 2.5),
+  minHeight: 80,
+  background: 'linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)',
+  color: 'white',
+  justifyContent: 'flex-start',
 }));
 
-// Updated MainContent to have dynamic margins based on drawer state
-const MainContent = styled('main', {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
-  flexGrow: 1,
-  padding: theme.spacing(3),
-  transition: theme.transitions.create('margin', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.standard,
-  }),
-  [theme.breakpoints.down('xs')]: {
-    padding: theme.spacing(2),
+const StyledDrawer = styled(Drawer)(({ theme }) => ({
+  width: drawerWidth,
+  flexShrink: 0,
+  '& .MuiDrawer-paper': {
+    width: drawerWidth,
+    boxSizing: 'border-box',
+    backgroundColor: 'white',
+    borderRight: '1px solid #e5e7eb',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
   },
 }));
 
-const Username = styled(Typography)(({ theme }) => ({
-  marginRight: theme.spacing(2),
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  backgroundColor: 'white',
+  borderBottom: '1px solid #e5e7eb',
+  boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+  '& .MuiToolbar-root': {
+    minHeight: 72,
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
+  },
+}));
+
+const SecurityBrand = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+  '& .brand-icon': {
+    fontSize: 32,
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)',
+    borderRadius: 8,
+    padding: 8,
+    backdropFilter: 'blur(10px)',
+  },
+  '& .brand-text': {
+    fontFamily: '"Inter", sans-serif',
+    fontWeight: 800,
+    fontSize: '1.25rem',
+    letterSpacing: '-0.02em',
+    textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+  },
+  '& .brand-subtitle': {
+    fontFamily: '"Inter", sans-serif',
+    fontWeight: 400,
+    fontSize: '0.75rem',
+    opacity: 0.9,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+  },
+});
+
+const NavigationSection = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2, 1.5),
+}));
+
+const SectionHeader = styled(Typography)(({ theme }) => ({
+  fontFamily: '"Inter", sans-serif',
+  fontSize: '0.75rem',
+  fontWeight: 600,
+  color: '#6b7280',
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  marginBottom: theme.spacing(1),
+  paddingLeft: theme.spacing(1),
+}));
+
+const NavListItem = styled(ListItemButton)(({ theme, active }) => ({
+  borderRadius: 12,
+  marginBottom: 4,
+  padding: '12px 16px',
+  minHeight: 56,
+  backgroundColor: active ? '#3b82f6' : 'transparent',
+  color: active ? 'white' : '#374151',
+  transition: 'all 0.2s ease',
+  border: active ? 'none' : '1px solid transparent',
+  boxShadow: active ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
+  '&:hover': {
+    backgroundColor: active ? '#2563eb' : '#f9fafb',
+    border: active ? 'none' : '1px solid #e5e7eb',
+    transform: 'translateY(-1px)',
+    boxShadow: active 
+      ? '0 6px 16px rgba(59, 130, 246, 0.4)'
+      : '0 2px 4px rgba(0, 0, 0, 0.05)',
+  },
+  '& .MuiListItemIcon-root': {
+    minWidth: 40,
+    color: active ? 'white' : '#6b7280',
+  },
+  '& .nav-badge': {
+    marginLeft: 'auto',
+  },
+}));
+
+const UserSection = styled(Box)(({ theme }) => ({
+  marginTop: 'auto',
+  padding: theme.spacing(2, 1.5),
+  borderTop: '1px solid #f3f4f6',
+  backgroundColor: '#fafafa',
 }));
 
 const MainLayout = () => {
-  //const theme = useTheme(); // This is used in MainContent styled component (passed down via props)
-  const location = useLocation();
+  const theme = useTheme();
   const navigate = useNavigate();
-  const { currentUser, isAdmin, logoutUser } = useAuth();
+  const location = useLocation();
+  const { user, logout } = useAuth();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
+  const [open, setOpen] = useState(!isMobile);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  // Persist drawer state using localStorage
-  const [open, setOpen] = useState(() => {
-    const savedState = localStorage.getItem('drawerOpen');
-    return savedState ? JSON.parse(savedState) : false;
-  });
+  const coreMenuItems = [
+    { 
+      text: 'Dashboard', 
+      icon: <DashboardIcon />, 
+      path: '/',
+      description: 'System overview and security status',
+      badge: null
+    },
+    { 
+      text: 'Live Descriptions', 
+      icon: <DescriptionIcon />, 
+      path: '/live-descriptions',
+      description: 'Real-time AI surveillance analysis',
+      badge: 'AI'
+    },
+  ];
 
-  // State for expanded menu sections
-  const [expandedSection, setExpandedSection] = useState(null);
+  const monitoringMenuItems = [
+    { 
+      text: 'Stream Management', 
+      icon: <VideocamIcon />, 
+      path: '/streams',
+      description: 'Camera feeds and configurations'
+    },
+    { 
+      text: 'Stored Videos', 
+      icon: <VideoLibraryIcon />, 
+      path: '/stored-videos',
+      description: 'Recorded surveillance footage'
+    },
+    { 
+      text: 'Event Search', 
+      icon: <SearchIcon />, 
+      path: '/event-search',
+      description: 'Search security events and incidents'
+    },
+    { 
+      text: 'Vision Search', 
+      icon: <VisibilityIcon />, 
+      path: '/vision-search',
+      description: 'AI-powered content analysis'
+    },
+  ];
 
-  // Check if a route is active
-  const isActiveRoute = (path) => {
-    return location.pathname === path ||
-      (path !== '/' && location.pathname.startsWith(path));
+  const securityMenuItems = [
+    { 
+      text: 'Alarm Triggers', 
+      icon: <NotificationsActiveIcon />, 
+      path: '/alarm-triggers',
+      description: 'Security alerts and notifications'
+    },
+    { 
+      text: 'Behavior Detection', 
+      icon: <PsychologyIcon />, 
+      path: '/behavior-detection',
+      description: 'Advanced behavioral analytics'
+    },
+    { 
+      text: 'Reports', 
+      icon: <AssessmentIcon />, 
+      path: '/reports',
+      description: 'Security and forensic reports'
+    },
+  ];
+
+  const adminMenuItems = [
+    { 
+      text: 'User Management', 
+      icon: <SupervisorAccountIcon />, 
+      path: '/users',
+      description: 'System users and permissions',
+      adminOnly: true
+    },
+  ];
+
+  const handleDrawerToggle = () => {
+    setOpen(!open);
   };
 
-  // Toggle expanded section
-  const toggleSection = (section) => {
-    setExpandedSection(expandedSection === section ? null : section);
-  };
-
-  const handleDrawerOpen = () => {
-    setOpen(true);
-    localStorage.setItem('drawerOpen', 'true');
-  };
-
-  const handleDrawerClose = () => {
-    setOpen(false);
-    localStorage.setItem('drawerOpen', 'false');
-  };
-
-  // Wrap handleNavigation in useCallback to prevent unnecessary recreations
-  const handleNavigation = useCallback((path) => {
+  const handleMenuClick = (path) => {
     navigate(path);
-  }, [navigate]);
-
-  const handleStreamClick = () => {
-    // If the drawer is not open, directly navigate
-    if (!open) {
-      handleNavigation('/streams');
-      return;
-    }
-
-    // Otherwise toggle the expanded section
-    toggleSection('streams');
-
-    // If we're not already on the streams page and we're collapsing the section, navigate to streams
-    if (expandedSection === 'streams' && !isActiveRoute('/streams')) {
-      handleNavigation('/streams');
+    if (isMobile) {
+      setOpen(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
+  const handleProfileMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      // Toggle drawer with Alt+M
-      if (e.altKey && e.key === 'm') {
-        setOpen(prev => !prev);
-        localStorage.setItem('drawerOpen', (!open).toString());
-      }
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
 
-      // Navigate with number keys while holding Alt
-      if (e.altKey) {
-        switch (e.key) {
-          case '1': handleNavigation('/dashboard'); break;
-          case '2': handleNavigation('/streams'); break;
-          case '3': handleNavigation('/vision/search'); break;
-          case '4': isAdmin() && handleNavigation('/users'); break;
-          case '5': handleNavigation('/profile'); break;
-          default: break;
-        }
-      }
-    };
+  const handleLogout = () => {
+    logout();
+    handleProfileMenuClose();
+  };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [open, isAdmin, handleNavigation]); // Now handleNavigation won't change on every render
+  const handleProfile = () => {
+    navigate('/profile');
+    handleProfileMenuClose();
+  };
 
-  // Initialize expanded sections based on current route
-  useEffect(() => {
-    if (location.pathname.startsWith('/streams') && open) {
-      setExpandedSection('streams');
-    }
-  }, [location.pathname, open]);
+  const isMenuOpen = Boolean(anchorEl);
+
+  const getCurrentPageTitle = () => {
+    const allItems = [...coreMenuItems, ...monitoringMenuItems, ...securityMenuItems, ...adminMenuItems];
+    const currentItem = allItems.find(item => item.path === location.pathname);
+    return currentItem?.text || 'Security Monitoring System';
+  };
+
+  const renderNavSection = (title, items) => (
+    <NavigationSection>
+      <SectionHeader>{title}</SectionHeader>
+      <List disablePadding>
+        {items.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding>
+              <NavListItem
+                active={isActive}
+                onClick={() => handleMenuClick(item.path)}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText 
+                  primary={item.text}
+                  secondary={item.description}
+                  primaryTypographyProps={{ 
+                    fontSize: '0.875rem',
+                    fontWeight: isActive ? 600 : 500,
+                    fontFamily: '"Inter", sans-serif',
+                  }}
+                  secondaryTypographyProps={{ 
+                    fontSize: '0.75rem',
+                    fontFamily: '"Inter", sans-serif',
+                    color: isActive ? 'rgba(255,255,255,0.8)' : '#9ca3af',
+                    marginTop: '2px',
+                  }}
+                />
+                {item.badge && (
+                  <Chip
+                    label={item.badge}
+                    size="small"
+                    className="nav-badge"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.6rem',
+                      fontWeight: 600,
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : '#e0f2fe',
+                      color: isActive ? 'white' : '#0277bd',
+                      border: 'none',
+                    }}
+                  />
+                )}
+              </NavListItem>
+            </ListItem>
+          );
+        })}
+      </List>
+    </NavigationSection>
+  );
+
+  const drawer = (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <DrawerHeader>
+        <SecurityBrand>
+          <ShieldIcon className="brand-icon" />
+          <Box>
+            <Typography className="brand-text">
+              SecureTech
+            </Typography>
+            <Typography className="brand-subtitle">
+              Monitoring System
+            </Typography>
+          </Box>
+        </SecurityBrand>
+      </DrawerHeader>
+
+      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+        {renderNavSection('Core', coreMenuItems)}
+        {renderNavSection('Monitoring', monitoringMenuItems)}
+        {renderNavSection('Security', securityMenuItems)}
+        
+        {user?.role === 'admin' && renderNavSection('Administration', adminMenuItems)}
+      </Box>
+
+      <UserSection>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Avatar 
+            sx={{ 
+              width: 36, 
+              height: 36, 
+              bgcolor: '#3b82f6',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+            }}
+          >
+            {user?.username?.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography sx={{ 
+              fontSize: '0.875rem', 
+              fontWeight: 600, 
+              color: '#374151',
+              fontFamily: '"Inter", sans-serif',
+            }}>
+              {user?.username}
+            </Typography>
+            <Typography sx={{ 
+              fontSize: '0.75rem', 
+              color: '#6b7280',
+              fontFamily: '"Inter", sans-serif',
+            }}>
+              {user?.role === 'admin' ? 'Administrator' : 'Operator'}
+            </Typography>
+          </Box>
+          <Badge badgeContent={3} color="error" variant="dot">
+            <NotificationsIcon sx={{ color: '#9ca3af', fontSize: 20 }} />
+          </Badge>
+        </Box>
+      </UserSection>
+    </Box>
+  );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#fafafa' }}>
       <CssBaseline />
-      <AppBar position="fixed" open={open}>
+      
+      <StyledAppBar
+        position="fixed"
+        sx={{
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+        }}
+      >
         <Toolbar>
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            onClick={handleDrawerOpen}
             edge="start"
-            sx={{
-              marginRight: 5,
-              ...(open && { display: 'none' }),
+            onClick={handleDrawerToggle}
+            sx={{ 
+              mr: 2, 
+              display: { md: 'none' },
+              color: '#374151'
             }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
-            Intelligent Surveillance System
+          
+          <Typography 
+            variant="h5" 
+            component="h1"
+            sx={{ 
+              flexGrow: 1,
+              color: '#111827',
+              fontWeight: 700,
+              fontFamily: '"Inter", sans-serif',
+              letterSpacing: '-0.025em',
+            }}
+          >
+            {getCurrentPageTitle()}
           </Typography>
-          {currentUser && (
-            <Username variant="body1">
-              {currentUser.username}
-            </Username>
-          )}
-          <Tooltip title="Logout">
-            <IconButton color="inherit" onClick={handleLogout}>
-              <LogoutIcon />
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Badge badgeContent={5} color="error">
+              <IconButton
+                sx={{ 
+                  backgroundColor: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  '&:hover': { backgroundColor: '#f3f4f6' }
+                }}
+              >
+                <NotificationsIcon sx={{ color: '#6b7280' }} />
+              </IconButton>
+            </Badge>
+            
+            <IconButton
+              size="large"
+              edge="end"
+              aria-label="account of current user"
+              onClick={handleProfileMenuOpen}
+              sx={{
+                p: 0,
+                ml: 1,
+              }}
+            >
+              <Avatar 
+                sx={{ 
+                  width: 40, 
+                  height: 40, 
+                  bgcolor: '#3b82f6',
+                  fontWeight: 600,
+                  border: '2px solid white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              >
+                {user?.username?.charAt(0).toUpperCase()}
+              </Avatar>
             </IconButton>
-          </Tooltip>
+          </Box>
         </Toolbar>
-      </AppBar>
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            <ChevronLeftIcon />
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          <Tooltip title="Dashboard" placement="right" disableHoverListener={open}>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation('/dashboard')}
-                sx={{
-                  backgroundColor: isActiveRoute('/dashboard') ?
-                    'rgba(0, 0, 0, 0.08)' : 'transparent',
-                  '&:hover': {
-                    backgroundColor: isActiveRoute('/dashboard') ?
-                      'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                <ListItemIcon>
-                  <DashboardIcon color={isActiveRoute('/dashboard') ? "primary" : "inherit"} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Dashboard"
-                  primaryTypographyProps={{
-                    color: isActiveRoute('/dashboard') ? "primary" : "inherit"
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </Tooltip>
+      </StyledAppBar>
 
-          {/* Streams section with nested menu */}
-          <Tooltip title="Streams" placement="right" disableHoverListener={open}>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={handleStreamClick}
-                sx={{
-                  backgroundColor: isActiveRoute('/streams') ?
-                    'rgba(0, 0, 0, 0.08)' : 'transparent',
-                  '&:hover': {
-                    backgroundColor: isActiveRoute('/streams') ?
-                      'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                <ListItemIcon>
-                  <VideocamIcon color={isActiveRoute('/streams') ? "primary" : "inherit"} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Stream Management"
-                  primaryTypographyProps={{
-                    color: isActiveRoute('/streams') ? "primary" : "inherit"
-                  }}
-                />
-                {open && (expandedSection === 'streams' ? <ExpandLessIcon /> : <ExpandMoreIcon />)}
-              </ListItemButton>
-            </ListItem>
-          </Tooltip>
-
-          <Collapse in={expandedSection === 'streams' && open} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItem disablePadding>
-                <ListItemButton
-                  sx={{ pl: 4 }}
-                  onClick={() => handleNavigation('/streams')}
-                  selected={location.pathname === '/streams'}
-                >
-                  <ListItemIcon>
-                    <ListIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="All Streams" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton
-                  sx={{ pl: 4 }}
-                  onClick={() => handleNavigation('/streams/add')}
-                  selected={location.pathname === '/streams/add'}
-                >
-                  <ListItemIcon>
-                    <AddIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Add Stream" />
-                </ListItemButton>
-              </ListItem>
-            </List>
-          </Collapse>
-
-          {/* Vision Search */}
-          <Tooltip title="Vision Search" placement="right" disableHoverListener={open}>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation('/vision/search')}
-                sx={{
-                  backgroundColor: isActiveRoute('/vision/search') ?
-                    'rgba(0, 0, 0, 0.08)' : 'transparent',
-                  '&:hover': {
-                    backgroundColor: isActiveRoute('/vision/search') ?
-                      'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                <ListItemIcon>
-                  <SearchIcon color={isActiveRoute('/vision/search') ? "primary" : "inherit"} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Vision Search"
-                  primaryTypographyProps={{
-                    color: isActiveRoute('/vision/search') ? "primary" : "inherit"
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </Tooltip>
-
-          {/* User Management (admin only) */}
-          {isAdmin() && (
-            <Tooltip title="User Management" placement="right" disableHoverListener={open}>
-              <ListItem disablePadding>
-                <ListItemButton
-                  onClick={() => handleNavigation('/users')}
-                  sx={{
-                    backgroundColor: isActiveRoute('/users') ?
-                      'rgba(0, 0, 0, 0.08)' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: isActiveRoute('/users') ?
-                        'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
-                    }
-                  }}
-                >
-                  <ListItemIcon>
-                    <PeopleIcon color={isActiveRoute('/users') ? "primary" : "inherit"} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="User Management"
-                    primaryTypographyProps={{
-                      color: isActiveRoute('/users') ? "primary" : "inherit"
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            </Tooltip>
-          )}
-
-          {/* Profile */}
-          <Tooltip title="Profile" placement="right" disableHoverListener={open}>
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation('/profile')}
-                sx={{
-                  backgroundColor: isActiveRoute('/profile') ?
-                    'rgba(0, 0, 0, 0.08)' : 'transparent',
-                  '&:hover': {
-                    backgroundColor: isActiveRoute('/profile') ?
-                      'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.04)',
-                  }
-                }}
-              >
-                <ListItemIcon>
-                  <PersonIcon color={isActiveRoute('/profile') ? "primary" : "inherit"} />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Profile"
-                  primaryTypographyProps={{
-                    color: isActiveRoute('/profile') ? "primary" : "inherit"
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </Tooltip>
-        </List>
-      </Drawer>
-      {/* MainContent uses the theme via styled component props */}
-      <MainContent open={open}
+      <Box
+        component="nav"
+        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
       >
-        <DrawerHeader />
-        <Outlet />
-      </MainContent>
+        <StyledDrawer
+          variant={isMobile ? 'temporary' : 'permanent'}
+          open={open}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+        >
+          {drawer}
+        </StyledDrawer>
+      </Box>
+
+      <Main open={open}>
+        <Box sx={{ minHeight: 72 }} /> {/* Spacer for fixed header */}
+        <Box sx={{ p: 3 }}>
+          <Outlet />
+        </Box>
+      </Main>
+
+      <Menu
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        id="primary-search-account-menu"
+        keepMounted
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        open={isMenuOpen}
+        onClose={handleProfileMenuClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: 2,
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #e5e7eb',
+            minWidth: 200,
+          }
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: '1px solid #f3f4f6' }}>
+          <Typography sx={{ 
+            fontWeight: 600, 
+            fontSize: '0.875rem',
+            fontFamily: '"Inter", sans-serif',
+            color: '#111827'
+          }}>
+            {user?.username}
+          </Typography>
+          <Typography sx={{ 
+            fontSize: '0.75rem', 
+            color: '#6b7280',
+            fontFamily: '"Inter", sans-serif',
+          }}>
+            {user?.role === 'admin' ? 'System Administrator' : 'Security Operator'}
+          </Typography>
+        </Box>
+        
+        <MenuItem 
+          onClick={handleProfile}
+          sx={{ 
+            py: 1.5, 
+            px: 2,
+            fontFamily: '"Inter", sans-serif',
+            fontSize: '0.875rem',
+          }}
+        >
+          <AccountCircleIcon sx={{ mr: 2, color: '#6b7280' }} />
+          Profile Settings
+        </MenuItem>
+        
+        <MenuItem 
+          onClick={handleLogout}
+          sx={{ 
+            py: 1.5, 
+            px: 2,
+            fontFamily: '"Inter", sans-serif',
+            fontSize: '0.875rem',
+            color: '#ef4444',
+            '&:hover': { backgroundColor: '#fef2f2' }
+          }}
+        >
+          <LogoutIcon sx={{ mr: 2, color: '#ef4444' }} />
+          Sign Out
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

@@ -14,29 +14,57 @@ const fs = require('fs');
 const threadManager = require('../services/threadManager');
 const embeddingService = require('../services/embeddingService');
 
-// Ensure Ollama model is available and download it if needed
+// Initialize embedding model based on configuration
 (async () => {
   try {
     const axios = require('axios');
-    const OLLAMA_API = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
-    const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'nomic-embed-text:v1.5';
+    const EMBEDDING_API = process.env.EMBEDDING_API_URL || process.env.EMBEDDING_API_URL_REMOTE;
+    const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'embedding_model';
     
-    // Check if model exists
-    const response = await axios.get(`${OLLAMA_API}/tags`);
-    const modelExists = response.data.models.some(model => 
-      model.name === EMBEDDING_MODEL || model.name.startsWith(`${EMBEDDING_MODEL}:`)
-    );
-    
-    if (!modelExists) {
-      logger.info(`Downloading Nomic Embed Text model (${EMBEDDING_MODEL})...`);
-      await axios.post(`${OLLAMA_API}/pull`, { name: EMBEDDING_MODEL });
-      logger.info(`Successfully downloaded ${EMBEDDING_MODEL}`);
+    if (EMBEDDING_API) {
+      // Test new embedding API
+      try {
+        logger.info(`Testing new embedding API at ${EMBEDDING_API}`);
+        const testResponse = await axios.post(`${EMBEDDING_API}/embeddings`, {
+          model: EMBEDDING_MODEL,
+          input: "test"
+        }, { timeout: 10000 });
+        
+        if (testResponse.data && testResponse.data.data) {
+          logger.info(`New embedding model ${EMBEDDING_MODEL} is available at ${EMBEDDING_API}`);
+        } else {
+          logger.warn(`New embedding API responded but format unexpected`);
+        }
+      } catch (error) {
+        logger.warn(`New embedding API not available: ${error.message}, will try Ollama fallback`);
+        
+        // Fallback to Ollama
+        const OLLAMA_API = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
+        const LEGACY_MODEL = process.env.LEGACY_EMBEDDING_MODEL || 'nomic-embed-text:v1.5';
+        
+        try {
+          const response = await axios.get(`${OLLAMA_API}/tags`);
+          const modelExists = response.data.models.some(model =>
+            model.name === LEGACY_MODEL || model.name.startsWith(`${LEGACY_MODEL}:`)
+          );
+          
+          if (!modelExists) {
+            logger.info(`Downloading legacy embedding model (${LEGACY_MODEL})...`);
+            await axios.post(`${OLLAMA_API}/pull`, { name: LEGACY_MODEL });
+            logger.info(`Successfully downloaded ${LEGACY_MODEL}`);
+          } else {
+            logger.info(`Legacy embedding model ${LEGACY_MODEL} is available`);
+          }
+        } catch (ollamaError) {
+          logger.error(`Error setting up legacy embedding model: ${ollamaError.message}`);
+          logger.warn('Semantic search may not be available');
+        }
+      }
     } else {
-      logger.info(`Embedding model ${EMBEDDING_MODEL} is available`);
+      logger.info('No new embedding API configured, using Ollama fallback');
     }
   } catch (error) {
-    logger.error(`Error setting up embedding model: ${error.message}`);
-    logger.warn('Semantic search may not be available until Ollama is properly configured');
+    logger.error(`Error initializing embedding models: ${error.message}`);
   }
 })();
 
@@ -726,6 +754,125 @@ exports.getRecordingByTime = async (req, res) => {
   } catch (error) {
     console.error('Error getting recording by time:', error);
     return res.status(500).json({ message: 'Failed to get recording data' });
+  }
+};
+
+// Generate live description for a stream
+exports.generateLiveDescription = async (req, res, next) => {
+  try {
+    const { streamId } = req.params;
+    const { prompt } = req.body;
+    
+    if (!streamId) {
+      return res.status(400).json({ message: 'Stream ID is required' });
+    }
+    
+    if (!prompt) {
+      return res.status(400).json({ message: 'Prompt is required' });
+    }
+    
+    // Verify stream exists
+    const stream = await Stream.findById(streamId);
+    if (!stream) {
+      return res.status(404).json({ message: 'Stream not found' });
+    }
+    
+    // Import vision processor
+    const visionProcessor = require('../services/visionProcessor');
+    const frameCapture = require('../services/frameCapture');
+    
+    try {
+      // Capture frame from stream
+      logger.info(`Capturing frame for live description from stream ${streamId}`);
+      const frameBuffer = await frameCapture.captureFrame(stream.url, {
+        username: stream.credentials?.username,
+        password: stream.credentials?.password,
+        timeout: 10000,
+        streamId: streamId
+      });
+      
+      if (!Buffer.isBuffer(frameBuffer)) {
+        throw new Error('Invalid frame buffer captured from stream');
+      }
+      
+      // Convert to base64
+      const base64Image = frameBuffer.toString('base64');
+      
+      // Process with vision model
+      logger.info(`Processing frame with vision model for live description`);
+      const result = await visionProcessor.processImage(base64Image, prompt);
+      
+      // Extract description from result
+      let description = 'No description available';
+      if (result.content) {
+        if (typeof result.content === 'string') {
+          description = result.content;
+        } else if (typeof result.content === 'object' && result.content.description) {
+          description = result.content.description;
+        } else {
+          description = JSON.stringify(result.content);
+        }
+      }
+
+      // Save to database for searchability
+      try {
+        // Generate embedding for the description
+        const embeddingService = require('../services/embeddingService');
+        let embedding = null;
+        try {
+          if (description && description.length > 0) {
+            embedding = await embeddingService.generateEmbedding(description);
+          }
+        } catch (embeddingError) {
+          logger.error(`Error generating embedding for live description: ${embeddingError.message}`);
+        }
+
+        // Save to VisionResult for searchability
+        const visionResult = new VisionResult({
+          streamId,
+          promptId: null, // No specific prompt for live descriptions
+          result: description,
+          embedding,
+          detections: null,
+          imageUrl: null, // Not saving image for live descriptions to save space
+          processingTime: 0,
+          tokenCount: result.usage?.total_tokens || 0,
+          timestamp: new Date(),
+          metadata: {
+            prompt_tokens: result.usage?.prompt_tokens,
+            completion_tokens: result.usage?.completion_tokens,
+            source: 'live_description'
+          },
+        });
+
+        await visionResult.save();
+        logger.info(`Saved live description to database for stream ${streamId}`);
+      } catch (saveError) {
+        logger.error(`Error saving live description to database: ${saveError.message}`);
+        // Don't fail the response if saving fails
+      }
+      
+      res.status(200).json({
+        streamId,
+        description,
+        timestamp: new Date(),
+        usage: result.usage
+      });
+      
+    } catch (visionError) {
+      logger.error(`Vision processing error for stream ${streamId}: ${visionError.message}`);
+      res.status(500).json({
+        message: 'Failed to process frame',
+        error: visionError.message
+      });
+    }
+    
+  } catch (error) {
+    logger.error(`Generate live description error: ${error.message}`);
+    res.status(500).json({
+      message: 'Failed to generate live description',
+      error: error.message
+    });
   }
 };
 

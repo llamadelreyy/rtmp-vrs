@@ -47,4 +47,7 @@ router.get('/test', (req, res) => {
 // Add this route to get recording folder by timestamp
 router.get('/recording-by-time/:streamId', authenticate, visionController.getRecordingByTime);
 
+// Generate live description for a stream
+router.post('/generate-live-description/:streamId', authenticate, visionController.generateLiveDescription);
+
 module.exports = router;

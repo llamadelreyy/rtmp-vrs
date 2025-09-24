@@ -2,9 +2,10 @@
 const axios = require('axios');
 const { logger } = require('../utils/logger');
 
-// Configure the Ollama API endpoint
-const OLLAMA_API = process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
-const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'nomic-embed-text:v1.5';
+// Configure the embedding API endpoint - use new model first, fallback to Ollama
+const EMBEDDING_API = process.env.EMBEDDING_API_URL || process.env.EMBEDDING_API_URL_REMOTE || process.env.OLLAMA_API_URL || 'http://localhost:11434/api';
+const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || process.env.LEGACY_EMBEDDING_MODEL || 'embedding_model';
+const IS_OPENAI_COMPATIBLE = process.env.EMBEDDING_API_URL || process.env.EMBEDDING_API_URL_REMOTE;
 
 /**
  * Generate embeddings for a text using Nomic Embed Text model via Ollama
@@ -18,21 +19,52 @@ async function generateEmbedding(text) {
   }
 
   try {
-    logger.debug(`Generating embedding for text (length: ${text.length}) using ${EMBEDDING_MODEL}`);
+    logger.debug(`Generating embedding for text (length: ${text.length}) using ${EMBEDDING_MODEL} at ${EMBEDDING_API}`);
     
-    const response = await axios.post(`${OLLAMA_API}/embeddings`, {
-      model: EMBEDDING_MODEL,
-      prompt: text,
-    }, {
-      timeout: 30000 // 30 second timeout
+    let requestBody, responseField;
+    
+    if (IS_OPENAI_COMPATIBLE) {
+      // Use OpenAI-compatible API format
+      requestBody = {
+        model: EMBEDDING_MODEL,
+        input: text,
+      };
+      responseField = 'data';
+    } else {
+      // Use Ollama format as fallback
+      requestBody = {
+        model: EMBEDDING_MODEL,
+        prompt: text,
+      };
+      responseField = 'embedding';
+    }
+    
+    const apiEndpoint = IS_OPENAI_COMPATIBLE ? `${EMBEDDING_API}/embeddings` : `${EMBEDDING_API}/embeddings`;
+    
+    const response = await axios.post(apiEndpoint, requestBody, {
+      timeout: 30000, // 30 second timeout
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     
-    if (response.data && response.data.embedding) {
-      const embedding = response.data.embedding;
+    let embedding;
+    if (IS_OPENAI_COMPATIBLE && response.data && response.data.data && response.data.data[0]) {
+      // OpenAI-compatible response format
+      embedding = response.data.data[0].embedding;
+    } else if (response.data && response.data.embedding) {
+      // Ollama response format
+      embedding = response.data.embedding;
+    } else {
+      logger.error('Embedding response missing expected data structure', response.data);
+      return null;
+    }
+    
+    if (embedding && Array.isArray(embedding)) {
       logger.debug(`Successfully generated embedding with ${embedding.length} dimensions`);
       return embedding;
     } else {
-      logger.error('Embedding response missing expected data structure', response.data);
+      logger.error('Invalid embedding format received', embedding);
       return null;
     }
   } catch (error) {

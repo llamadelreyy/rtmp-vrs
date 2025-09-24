@@ -8,13 +8,22 @@ const config = require('../config/env');
 class VisionProcessor {
   constructor(openAIKey) {
     this.openAIKey = openAIKey || config.OPENAI_API_KEY;
-    this.endpoint = config.VLM_API_URL; // Use VLM API URL from environment variables
-    this.model = config.VLM_MODEL; // Use VLM model from environment variables
-    this.maxTokens = config.VLM_MAX_TOKENS; // Use max tokens from environment variables
+    // Use new vision model endpoints first, fallback to legacy VLM
+    this.endpoint = config.VISION_API_URL || config.VISION_API_URL_REMOTE || config.VLM_API_URL;
+    this.model = config.VISION_MODEL || config.VLM_MODEL;
+    this.maxTokens = config.VISION_CONTEXT_SIZE || config.VLM_MAX_TOKENS;
+    
+    // Use chat/completions endpoint for OpenAI-compatible APIs
+    if (config.VISION_API_URL || config.VISION_API_URL_REMOTE) {
+      this.endpoint = this.endpoint + (this.endpoint.endsWith('/') ? '' : '/') + 'chat/completions';
+    }
+    
     this.headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.openAIKey}`
+      'Authorization': `Bearer ${this.openAIKey || 'dummy-key'}`
     };
+    
+    logger.info(`VisionProcessor initialized with endpoint: ${this.endpoint}, model: ${this.model}`);
   }
 
   async processImage(imageBase64, prompt) {
